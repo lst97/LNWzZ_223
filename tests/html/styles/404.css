@@ -1,0 +1,68 @@
+*{
+    font-family: "Lucida Console", "Courier New", monospace !important;
+}
+
+div.title{
+    width: 100%;
+    height:70px;
+    background-color: steelblue;
+}
+
+a:link{
+    color: steelblue;
+    background-color: transparent;
+}
+
+a:hover {
+    color: lightsteelblue;
+    background-color: transparent;
+
+}
+
+a:active {
+    color: gray;
+    background-color: transparent;
+}
+
+div.title {
+    position: relative;
+}
+
+div.title p{
+    color: white;
+    text-align: center;
+    padding: 25px;
+    font-weight: bold;
+}
+
+html, body{
+    position: relative;
+}
+
+.content{
+    margin-top: 50px;
+    margin-left: 25%;
+    margin-right: 25%;
+}
+
+.pre-footer{
+    margin-top: 50px;
+}
+
+footer{
+    position: fixed;
+    bottom: 10px;
+    font-size: 11px;
+}
+
+.main{
+    line-height: 200px;
+    font-weight: bold;
+    font-size: 180px;
+    text-align: center;
+}
+
+::selection {
+    color: black;
+    background: lightgray;
+}
