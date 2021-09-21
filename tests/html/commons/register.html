@@ -4,29 +4,31 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./styles/reset.css">
-    <link rel="stylesheet" href="./styles/style.css">
-    <title>Control Panel</title>
+    <link rel="stylesheet" href="/styles/reset.css">
+    <link rel="stylesheet" href="/styles/style.css">
+    <script type="application/javascript" src="/scripts/register.js"></script>
+    <title>Register</title>
+
 </head>
 <body>
     <div class="wrapper">
         <div class="intro">
             <div>
                 <div class="icon"><a href="#">
-                        <img class="icon" src="./imgs/me_blur.webp" title="Top"></a>
+                        <img class="icon" src="/imgs/main.png" title="Top"></a>
                 </div>
                 <nav class="nav-left">
                     <ul class="items-list">
-                        <a href="./index.html">
+                        <a href="/index.html">
                             <li class="item selected">Control Panel</li>
                         </a>
-                        <a href="./commons/resources.html">
+                        <a href="/join.html">
                             <li class="item">Join</li>
                         </a>
-                        <a href="./commons/myworks.html">
+                        <a href="/query.html">
                             <li class="item">Run Query</li>
                         </a>
-                        <a href="./commons/myworks.html">
+                        <a href="/feedback.html">
                             <li class="item">Feedback</li>
                         </a>
                     </ul>
@@ -35,7 +37,20 @@
         </div>
         <div class="content">
             <main class="main">
-                <p>Please Login.</p>
+                <form id="register_form">
+                    <label for="email">Email</label><br>
+                    <input type="text" id="email" name="email" placeholder="example@deakin.edu.au" pattern=".+@(collegestudent.deakin.edu.au|deakin.edu.au)" required><br>
+                    <label for="pwd">Password</label><br>
+                    <input type="password" id="pwd" name="pwd" required><br>
+                    <label for="pwd">Confirm Password</label><br>
+                    <input type="password" id="pwd_confirm" name="pwd_confirm" required><br>
+                    <input type="submit" onclick="send_otp()" value="Send OTP" id="btn_otp" />
+                    <input type="submit" onclick="send_form()" value="Submit" />
+                </form>
+                <label for="otp">OTP</label><br>
+                <input type="text" id="otp" name="otp" placeholder="123456" pattern="{}"><br>
+                <p id="msg">{}</p>
+                
             </main>
             <footer class="content-footer">last modify: 20/09/2021 16:20:03 (AEST)</footer>
         </div>

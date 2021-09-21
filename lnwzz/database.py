@@ -75,20 +75,20 @@ class db:
         if cur is not None:
             LOG.print("Create Table...")
             try:
-                if cur.execute(
+                cur.execute(
                     """
                     CREATE TABLE IF NOT EXISTS users(
                         email_address TEXT PRIMARY KEY,
                         user_name TEXT,
                         password TEXT,
-                        OTP INT,
+                        OTP TEXT,
                         verified INT,
                         invite_link TEXT,
                         role INT
                     );
                     """
-                ):  # query && Exception handling
-                    LOG.print("Table Created.")
+                )  # query && Exception handling
+                LOG.print("Table Created.")
             except sqlite3.Error as ex:
                 LOG.print(str(ex), status="critical")
                 self.__close(cur)
@@ -97,33 +97,278 @@ class db:
 
         return False
 
+    def insert_test(self):
+        cur = self.__connect()
+
+        cur.execute(
+            'INSERT INTO users VALUES ("test@deakin.edu.au", "test", "1234", 123456, 1, "", 1);'
+        )
+        cur.execute(
+            'INSERT INTO users VALUES ("admin@deakin.edu.au", "admin", "5678", 567891, 1, "HIJKLM", 0);'
+        )
+        LOG.print("Insert Test Data DONE.")
+        return self.__close(cur)
+
     def login(self, email: str, password: str) -> bool:
-        pass
+        cur = self.__connect()
 
-    def register(self, email: str, password: str, otp: int) -> bool:
-        pass
+        if cur is not None:
+            LOG.print("Login Check...")
+            try:
+                response = cur.execute(
+                        "SELECT * FROM users WHERE email_address=? AND password=?;",
+                        (
+                            email,
+                            password,
+                        ),
+                    ).fetchone()
+                
+                if (response is None):
+                    msg = "Record Not Found."
+                elif response[3] == 0:
+                    msg = "Email Not Verified."
+                else:
+                    LOG.print("Record Found.")
+                    return self.__close(cur)
+                
+                LOG.print(msg, status="warning")
+                self.__close(cur)
+                return False
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return False
 
-    def insert_ivlink(self, email: str, ivlink: str) -> bool:
-        pass
+        return False
 
-    def insert_otp(self, email: str, otp: int) -> bool:
-        pass
+    def check_unique(self, email: str) -> bool:
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("Check email...")
+            try:
+                response = cur.execute(
+                    "SELECT * FROM users WHERE email_address=?", (email,)
+                ).fetchone()
+                if response is not None:
+                    LOG.print("Record Found.")
+                    return False
+
+                LOG.print("Record Not Found.")
+                return self.__close(cur)
+
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return False
+
+        return False
+
+    def register(
+        self,
+        email: str,
+        password: str,
+    ) -> bool:
+
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("Update ivlink...")
+            try:
+                cur.execute(
+                    "UPDATE users SET password=?, verified=? WHERE email_address=?",
+                    (
+                        password,
+                        1,
+                        email,
+                    ),
+                )
+                LOG.print("Update Complete.")
+                return self.__close(cur)
+
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return False
+
+        return False
 
     def get_ivlink(self, email: str) -> str:
-        pass
-    
-    def get_otp(self, email: str) -> int:
-        pass
-    
-    def get_role(self, email:str) -> int:
-        pass
-    
-    def isVerified(self, email:str) -> bool:
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("ivlink Check...")
+            try:
+                response = cur.execute(
+                    "SELECT invite_link FROM users WHERE email_address=? ;", (email,)
+                ).fetchone()
+
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return ""
+
+            if response is None:
+                LOG.print("Record Not Found", status="warning")
+                self.__close(cur)
+                return ""
+
+            LOG.print("Record Found.")
+            return response[0]
+
+        return ""
+
+    def update_ivlink(self, email: str, ivlink: str) -> bool:
+        """Insert invite code to database.
+
+        Args:
+            ivlink (str): invite code generated from Discord API.
+
+        Returns:
+            bool:
+                True: success.
+                False: fail.
+        """
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("Update ivlink...")
+            try:
+                cur.execute(
+                    "UPDATE users SET invite_link=? WHERE email_address=?",
+                    (
+                        ivlink,
+                        email,
+                    ),
+                )
+                LOG.print("Update Complete.")
+                return self.__close(cur)
+
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return False
+
+        return False
+
+    def insert_otp(self, email: str, code: str) -> bool:
+        """Insert OTP to database.
+
+        Args:
+            code (str): OTP which send to the recipient.
+
+        Returns:
+            bool:
+                True: success.
+                False: fail.
+        """
+        LOG.print("Insert OTP to DB...")
+
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("Insert OTP...")
+            try:
+                cur.execute(
+                    "INSERT INTO users (email_address, password, OTP, verified, invite_link, role)\
+                        VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        email,
+                        "",
+                        code,
+                        0,
+                        "",
+                        1,
+                    ),
+                )
+                LOG.print("Update Complete.")
+                return self.__close(cur)
+
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return False
+
+        return False
+
+    def get_otp(self, email: str) -> str:
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("Role Check...")
+            try:
+                response = cur.execute(
+                    "SELECT OTP FROM users WHERE email_address=? ;", (email,)
+                ).fetchone()
+
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return -1
+
+            if response is None:
+                LOG.print("Record Not Found", status="warning")
+                self.__close(cur)
+                return -1
+
+            LOG.print("Record Found.")
+            return response[0]
+
+        return -1
+
+    def get_role(self, email: str) -> int:
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("Role Check...")
+            try:
+                response = cur.execute(
+                    "SELECT role FROM users WHERE email_address=? ;", (email,)
+                ).fetchone()
+
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return -1
+
+            if response is None:
+                LOG.print("Record Not Found", status="warning")
+                self.__close(cur)
+                return -1
+
+            LOG.print("Record Found.")
+            return response[0]
+
+        return -1
+
+    def verified(self, email: str) -> bool:
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("Verify Check...")
+            try:
+                response = cur.execute(
+                    "SELECT verified FROM users WHERE email_address=? ;", (email,)
+                ).fetchone()
+
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return -1
+
+            if response is None:
+                LOG.print("Record Not Found", status="warning")
+                self.__close(cur)
+                return -1
+
+            LOG.print("Record Found.")
+            return response[0]
+
+        return -1
+
+    def change_pwd(self, email: str, old_pwd: str, new_pwd: str) -> bool:
         pass
 
-    def change_pwd(self, email:str, old_pwd: str, new_pwd:str) -> bool:
-        pass
-    
     def drop(self) -> bool:
         """Drop the tables.
 
@@ -137,8 +382,8 @@ class db:
         if cur is not None:
             LOG.print("Drop Table...")
             try:
-                if cur.execute("""DROP TABLE users;"""):  # query
-                    LOG.print("Drop DONE.")
+                cur.execute("""DROP TABLE users;""")  # query
+                LOG.print("Drop DONE.")
             except sqlite3.Error as ex:
                 LOG.print(str(ex), status="critical")
                 self.__close(cur)
@@ -155,7 +400,9 @@ class db:
                 True: success.
                 False: fail.
         """
-        return self.create() if self.drop() else False
+        self.drop()
+        self.create()
+        return True
 
     # custom query
     def query(self, query_str: str) -> bool:
@@ -182,57 +429,3 @@ class db:
             return self.__close(cur)
 
         return False
-
-
-class dc(db):
-    """Provide database operation for Discord API
-
-    Inheritance from class db.
-    """
-
-    def __init__(self, db_name: str) -> None:
-        super().__init__(db_name)
-
-    def insert_ivlink(self, ivlink: str) -> bool:
-        """Insert invite code to database.
-
-        Args:
-            ivlink (str): invite code generated from Discord API.
-
-        Returns:
-            bool:
-                True: success.
-                False: fail.
-        """
-        LOG.print("Insert Invite Link to DB...")
-        if self.query(ivlink) is False:
-            return False
-
-        return True
-
-
-class smtp(db):
-    """Provide database operation for Gmail smtp
-
-    Inheritance from class db.
-    """
-
-    def __init__(self, db_name: str) -> None:
-        super().__init__(db_name)
-
-    def insert_otp(self, code: str) -> bool:
-        """Insert OTP to database.
-
-        Args:
-            code (str): OTP which send to the recipient.
-
-        Returns:
-            bool:
-                True: success.
-                False: fail.
-        """
-        LOG.print("Insert OTP to DB...")
-        if self.query(code) is False:
-            return False
-
-        return True

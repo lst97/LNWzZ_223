@@ -8,7 +8,7 @@ import time
 from dotenv import load_dotenv
 
 from utils.debug import dbg
-from database import smtp
+from database import db
 
 
 load_dotenv()
@@ -42,9 +42,9 @@ class gsmtp:
         self._sender_email = "deakinit.dc@gmail.com"
         self._password = os.getenv("EMAIL_PASSWORD")
         self._reciver_email = receiver
-        self._message = f"""{subject}\n{message}"""
+        self._message = f"{subject}\n{message}"
 
-    def send_otp(self) -> str:
+    def send_otp(self, code:str) -> str:
         """Send OTP to specified email address with prefix messages.
 
         >>> self.write_message("Email Verify - DeakinIT.dc", f"Your code: {str(otp)}")
@@ -55,18 +55,17 @@ class gsmtp:
                 False: failied database or email operation after 3 attempts.
         """
         # generate OTP with secure way
-        otp = None
 
-        db_smtp = smtp()
         LOG.print("Sending OTP...")
 
-        message = "Email Verify - DeakinIT.dc" + f"Your code: {str(otp)}"
-        if self.send(message=message) is not True and db_smtp.insert_otp(otp) is not True:
+        database = db("sqlite3.db")
+        self.write_message("Email Verify - DeakinIT.dc", f"Your code: {code}")
+        if self.send() is True and database.insert_otp(self._reciver_email, code) is True:
+            LOG.print("OTP Send.")
+            return True
+        else:
             LOG.print("Failied database or email operation", status="critical")
             return False
-
-        LOG.print("OTP Send.")
-        return True
 
     def send(self, message=None) -> bool:
         """Send custom email to specified email.
@@ -85,6 +84,7 @@ class gsmtp:
 
                     if message is None:
                         message = self._message
+
                     server.sendmail(self._sender_email, self._reciver_email, message)
 
                     break
@@ -111,4 +111,4 @@ class gsmtp:
             subject: email subject.
             message: email content.
         """
-        self._message = f"""Subject: {subject}\n{message}"""
+        self._message = f"Subject: {subject}\n\n{message}"

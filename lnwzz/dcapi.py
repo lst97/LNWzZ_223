@@ -7,8 +7,9 @@ import time
 import requests
 
 from dotenv import load_dotenv
+from requests.sessions import session
 
-from database import dc
+from database import db
 from utils.debug import dbg
 
 load_dotenv()
@@ -31,17 +32,17 @@ class api:
         _header: Http post header.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, email:str) -> None:
         self._token = os.getenv("DISCORD_TOKEN")
         self._guild = os.getenv("DISCORD_GUILD")
-        self._url = f"https://discordapp.com/api\
-            /channels/{882895138844729346}/invites"
+        self._url = f"https://discordapp.com/api/channels/{882895138844729346}/invites"
         self._headers = {
             "Authorization": f"Bot {self._token}",
             "User-Agent": f"HTTP API \
                 (Python Requests HTTP Library v{requests.__version__})",  # HTTPS API?
             "Content-Type": "application/json",
         }
+        self._email = email
 
     def ivlink(self) -> bool:
         """Generate invite link only allowed one person with unlimited time.
@@ -73,14 +74,8 @@ class api:
                     LOG.print("API request timeout!", status="critical")
                     return False
 
-            finally:
-                LOG.print(str(ex), status="critical")
-                return False # keep the program flow.
-
         link = json.loads(res.text)["code"]
         LOG.print("Invite Generated.", status="info")
         # update to SQL
-        database = dc()
-        database.insert_ivlink(link)
-
-        return True
+        database = db("sqlite3.db")
+        return database.update_ivlink(self._email, link)
