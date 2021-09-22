@@ -90,8 +90,8 @@ async def login(request: web.Request):
                 LOG.print(str(ex), "critical")
 
             email = request.query["email"]
-            password = request.query["pwd"]
-            if DATABASE.login(email, password):
+            password_hash = zokit_hash(request.query["pwd"]).get_hash() #hashing password
+            if DATABASE.login(email, password_hash):
                 session["email"] = email
                 session["role"] = DATABASE.get_role(
                     email
@@ -220,7 +220,8 @@ async def register(request: web.Request):
         # check OTP
         if DATABASE.get_otp(email) == request.query["otp"]:
             # update user to DB
-            if DATABASE.register(email, request.query["pwd"]) is False:
+            password_hash = zokit_hash(request.query["pwd"]).get_hash() #hashing password
+            if DATABASE.register(email, password_hash) is False:
                 LOG.print("Register Fail.", status="critical")
                 return web.Response(
                     text="Register fail, please try again later.",
