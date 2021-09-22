@@ -1,3 +1,4 @@
+#import hashing lib
 import hashlib
 
 ##hashing function for password
