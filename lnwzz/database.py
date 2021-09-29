@@ -19,6 +19,19 @@ class db:
         db_name: open or create database "*.db"
     """
 
+    # Test function to be delete
+    def insert_test(self):
+        cur = self.__connect()
+
+        cur.execute(
+            'INSERT INTO users VALUES ("test@deakin.edu.au", "03AC674216F3E15C761EE1A5E255F067953623C8B388B4459E13F978D7C846F4", 123456, 1, "", 1);'
+        )
+        cur.execute(
+            'INSERT INTO users VALUES ("admin@deakin.edu.au", "F8638B979B2F4F793DDB6DBD197E0EE25A7A6EA32B0AE22F5E3C5D119D839E75", 567891, 1, "HIJKLM", 0);'
+        )
+        LOG.print("Insert Test Data DONE.")
+        return self.__close(cur)
+
     def __init__(self, db_name) -> None:
         self._dbname = db_name
 
@@ -59,7 +72,7 @@ class db:
                 True: only return true in current stage.
         """
         cur.commit()
-        cur.close()  # Need to check if success?
+        cur.close()
         return True
 
     def create(self) -> bool:
@@ -79,7 +92,6 @@ class db:
                     """
                     CREATE TABLE IF NOT EXISTS users(
                         email_address TEXT PRIMARY KEY,
-                        user_name TEXT,
                         password TEXT,
                         OTP TEXT,
                         verified INT,
@@ -87,7 +99,7 @@ class db:
                         role INT
                     );
                     """
-                )  # query && Exception handling
+                )  
                 LOG.print("Table Created.")
             except sqlite3.Error as ex:
                 LOG.print(str(ex), status="critical")
@@ -97,18 +109,6 @@ class db:
 
         return False
 
-    def insert_test(self):
-        cur = self.__connect()
-
-        cur.execute(
-            'INSERT INTO users VALUES ("test@deakin.edu.au", "test", "1234", 123456, 1, "", 1);'
-        )
-        cur.execute(
-            'INSERT INTO users VALUES ("admin@deakin.edu.au", "admin", "5678", 567891, 1, "HIJKLM", 0);'
-        )
-        LOG.print("Insert Test Data DONE.")
-        return self.__close(cur)
-
     def login(self, email: str, password: str) -> bool:
         cur = self.__connect()
 
@@ -116,21 +116,21 @@ class db:
             LOG.print("Login Check...")
             try:
                 response = cur.execute(
-                        "SELECT * FROM users WHERE email_address=? AND password=?;",
-                        (
-                            email,
-                            password,
-                        ),
-                    ).fetchone()
-                
-                if (response is None):
+                    "SELECT * FROM users WHERE email_address=? AND password=?;",
+                    (
+                        email,
+                        password,
+                    ),
+                ).fetchone()
+
+                if response is None:
                     msg = "Record Not Found."
                 elif response[3] == 0:
                     msg = "Email Not Verified."
                 else:
                     LOG.print("Record Found.")
                     return self.__close(cur)
-                
+
                 LOG.print(msg, status="warning")
                 self.__close(cur)
                 return False
@@ -262,8 +262,6 @@ class db:
                 True: success.
                 False: fail.
         """
-        LOG.print("Insert OTP to DB...")
-
         cur = self.__connect()
 
         if cur is not None:
@@ -366,8 +364,23 @@ class db:
 
         return -1
 
-    def change_pwd(self, email: str, old_pwd: str, new_pwd: str) -> bool:
-        pass
+    def get_table(self, table_name: str) -> list:
+        cur = self.__connect()
+
+        if cur is not None:
+            LOG.print("Get Table...")
+            query_str = f"SELECT * FROM {table_name};"
+            try:
+                response = cur.execute(query_str).fetchall()
+            except sqlite3.Error as ex:
+                LOG.print(str(ex), status="critical")
+                self.__close(cur)
+                return -1
+
+            LOG.print("Record Found.")
+            return response
+
+        return None
 
     def drop(self) -> bool:
         """Drop the tables.
@@ -382,7 +395,7 @@ class db:
         if cur is not None:
             LOG.print("Drop Table...")
             try:
-                cur.execute("""DROP TABLE users;""")  # query
+                cur.execute("DROP TABLE users;")  # query
                 LOG.print("Drop DONE.")
             except sqlite3.Error as ex:
                 LOG.print(str(ex), status="critical")

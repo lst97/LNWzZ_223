@@ -7,7 +7,6 @@ import time
 import requests
 
 from dotenv import load_dotenv
-from requests.sessions import session
 
 from database import db
 from utils.debug import dbg
@@ -32,10 +31,17 @@ class api:
         _header: Http post header.
     """
 
-    def __init__(self, email:str) -> None:
+    def __init__(self, email: str) -> None:
+        """Init necessary information to use Discord API
+
+        All operation pointing to 882895138844729346 channel.
+
+        Args:
+            email (str): User email as identifier when using SQL.
+        """
         self._token = os.getenv("DISCORD_TOKEN")
         self._guild = os.getenv("DISCORD_GUILD")
-        self._url = f"https://discordapp.com/api/channels/{882895138844729346}/invites"
+        self._url = f"https://discordapp.com/api/channels/{882895138844729346}"
         self._headers = {
             "Authorization": f"Bot {self._token}",
             "User-Agent": f"HTTP API \
@@ -60,7 +66,7 @@ class api:
         for attempts in range(3):
             try:
                 res = requests.post(
-                    self._url,
+                    self._url + "/invites",
                     headers=self._headers,
                     data=json.dumps({"max_uses": 1, "unique": True, "max_age": 0}),
                 )
@@ -76,6 +82,23 @@ class api:
 
         link = json.loads(res.text)["code"]
         LOG.print("Invite Generated.", status="info")
+
         # update to SQL
         database = db("sqlite3.db")
         return database.update_ivlink(self._email, link)
+
+    @staticmethod
+    def member_status() -> list:
+        """Get online members count.
+
+        Returns:
+            list: Total count, Online count.
+        """
+        json_data = requests.get(
+            "https://discord.com/api/guilds/882895138182033429/widget.json"
+        ).json()
+        member_list = []
+        member_list.append(json_data["name"])
+        member_list.append(len(json_data["members"]))
+
+        return member_list
