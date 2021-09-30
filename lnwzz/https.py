@@ -8,7 +8,8 @@ from dcapi import api
 from gsender import gsmtp
 from database import db
 from utils.resources import HTML
-from utils import otp as OTP
+from utils.hash import zokit_hash
+import utils.otp as OTP
 
 from cryptography import fernet
 
@@ -19,7 +20,6 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import ssl
 import base64
 import os
-import hashlib
 import json
 
 LOG = dbg("[controller]")
@@ -185,11 +185,9 @@ async def login(request: web.Request) -> web.Response:
             LOG.print("Guest Session.")
             raise web.HTTPFound("/index.html")
 
-        password_binary = request.query["pwd"].encode()
-        password_sha256 = hashlib.sha256(password_binary).hexdigest()
-
+        password_sha256 = zokit_hash(request.query["pwd"]).get_hash()
         LOG.print("Identity Check...", status="info")
-        if DATABASE.login(email, password_sha256.upper()):
+        if DATABASE.login(email, password_sha256):
             session["email"] = email
             # base on SQL, 0: admin, 1: member
             session["role"] = DATABASE.get_role(email)
@@ -244,10 +242,8 @@ async def register(request: web.Request) -> web.Response:
         if DATABASE.get_otp(email) == request.query["otp"]:
             # update user to DB
 
-            password_binary = request.query["pwd"].encode()
-            password_sha256 = hashlib.sha256(password_binary).hexdigest()
-
-            if DATABASE.register(email, password_sha256.upper()) is False:
+            password_sha256 = zokit_hash(request.query["pwd"]).get_hash()
+            if DATABASE.register(email, password_sha256) is False:
                 LOG.print("Register Fail.", status="critical")
                 response = "Register fail, please try again later."
             else:

@@ -9,5 +9,5 @@ class zokit_hash:
     def get_hash(self):
         encoded=self._value.encode()
         result=hashlib.sha256(encoded)
-        encrypted = result.hexdigest()
+        encrypted = result.hexdigest().upper()
         return encrypted
